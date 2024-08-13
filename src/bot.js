@@ -1,8 +1,7 @@
-import { Telegraf } from 'telegraf';
-import config from 'config';
-import questions from './questions.js';
-import { getRandomQuestion, timeToMilliseconds } from './utils.js';
-import dotenv from 'dotenv';
+import { Telegraf, Markup } from "telegraf";
+import questions from "./questions.js";
+import { getRandomQuestion, timeToMilliseconds } from "./utils.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -36,14 +35,49 @@ function sendRandomQuestion(ctx) {
   }, INTERVAL);
 }
 
-bot.start((ctx) => {
-  ctx.reply("Бот запущен!");
-  sendRandomQuestion(ctx);
-});
-
-bot.command('next', (ctx) => {
-  sendRandomQuestion(ctx);
-});
+function getKeyboard() {
+    if (intervalId) {
+      return Markup.keyboard([
+        ['Следующий вопрос', 'Остановить'],
+      ]).resize().oneTime(false);
+    } else {
+      return Markup.keyboard([
+        ['Начать'],
+      ]).resize().oneTime(false);
+    }
+  }
+  
+  bot.start((ctx) => {
+    ctx.reply("Бот запущен!", getKeyboard());
+    sendRandomQuestion(ctx);
+  });
+  
+  bot.hears('Начать', (ctx) => {
+    if (!intervalId) {
+      sendRandomQuestion(ctx);
+      ctx.reply('Бот начал отправлять вопросы.', getKeyboard());
+    } else {
+      ctx.reply('Бот уже работает.', getKeyboard());
+    }
+  });
+  
+  bot.hears('Следующий вопрос', (ctx) => {
+    if (intervalId) {
+      sendRandomQuestion(ctx);
+    } else {
+      ctx.reply('Бот не активен. Нажмите "Начать", чтобы запустить его.');
+    }
+  });
+  
+  bot.hears('Остановить', (ctx) => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      ctx.reply("Отправка вопросов остановлена.", getKeyboard());
+    } else {
+      ctx.reply("Бот уже остановлен.");
+    }
+  });
 
 bot.launch();
 console.log("Бот запущен...");
