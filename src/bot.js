@@ -6,7 +6,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const bot = new Telegraf(config.get('TOKEN_TG_BOT'));
+const token = process.env.TOKEN_TG_BOT;
+if (!token) throw new Error("No token");
+const bot = new Telegraf(token);
 
 const INTERVAL = timeToMilliseconds({ minutes: 1 });
 const WORKING_HOURS_START = 7;
